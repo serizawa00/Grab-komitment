@@ -1,0 +1,49 @@
+<!doctype html><html lang="ms"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Grab Commitment</title><meta name="theme-color" content="#17202a"><link rel="manifest" href="manifest.webmanifest">
+<style>body{font-family:Arial,sans-serif;background:#f4f6f8;margin:0;color:#17202a}.w{max-width:850px;margin:auto;padding:14px}header,.card{background:white;padding:16px;border-radius:14px;margin-bottom:12px}header{background:#17202a;color:white}h1{font-size:22px;margin:0}.sum{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.b{background:white;padding:12px;border-radius:12px}.n{font-size:20px;font-weight:bold}.m{font-size:12px;color:#667085}.item{border-top:1px solid #ddd;padding:12px 0;display:grid;grid-template-columns:auto 1fr auto;gap:10px}.item:first-child{border:0}.name{font-weight:bold}.tag{font-size:11px;padding:5px 8px;border-radius:12px;background:#fee2e2;color:#991b1b}.ok{background:#dcfce7;color:#166534}.fund{background:#fef3c7;color:#92400e}button{border:0;border-radius:8px;padding:8px 10px;font-weight:bold;margin:3px;background:#17202a;color:white}input,select{padding:9px;border:1px solid #ccc;border-radius:8px;margin:3px;max-width:95%}.bar{height:7px;background:#eee;border-radius:8px;margin-top:6px;overflow:hidden}.fill{height:100%;background:#17202a}.paid{opacity:.55}.tools{display:flex;flex-wrap:wrap;gap:4px}.small{font-size:11px;color:#667085}.hide{display:none}</style></head>
+<body><div class="w"><header><h1>Grab Commitment Tracker V4</h1><div style="font-size:12px;margin-top:5px">Tick hanya selepas betul-betul bayar • Auto-save dalam Chrome</div></header>
+<div class="sum"><div class="b"><div class="m">Belum Bayar</div><div class="n" id="out"></div></div><div class="b"><div class="m">Sudah Bayar</div><div class="n" id="done"></div></div><div class="b"><div class="m">Buffer / Servis</div><div class="n" id="buf"></div><button onclick="buffer()">Ubah Buffer</button></div><div class="b"><div class="m">Hutang Mak</div><div class="n" id="mak"></div><button onclick="mak()">+ Bayaran</button></div></div>
+<div class="card"><b>Tambah Komitmen</b><br><input id="nm" placeholder="Nama"><input id="amt" type="number" placeholder="RM"><input id="due" type="date"><select id="cat"><option>Bulanan</option><option>Mingguan</option><option>Tertunggak</option><option>NOV — SEMASA</option><option>Lain-lain</option></select><button onclick="add()">Tambah</button>
+<div class="tools"><button onclick="backup()">Backup JSON</button><label><button onclick="document.getElementById('imp').click()">Import Backup</button><input class="hide" id="imp" type="file" onchange="restore(event)"></label></div><div class="small">Guna +Dana untuk masukkan lebihan minyak / lebihan Grab kepada komitmen tertentu.</div></div>
+<div class="card"><h3>📅 Mingguan</h3><div id="weekly"></div></div>
+<div class="card"><h3>📦 Komitmen Bulanan / Oktober</h3><div id="oct"></div></div>
+<div class="card"><h3>🆕 Komitmen November</h3><div id="nov"></div></div>
+<div class="card"><h3>⏰ Komitmen Ada Due Date</h3><div class="small">Disusun ikut tarikh paling dekat. Item di sini juga kekal dalam kategori asal supaya senang semak.</div><div id="dated"></div></div>
+<div class="card"><h3>📌 Lain-lain / Tertunggak</h3><div id="other"></div></div>
+<div class="card"><h3>✅ Sejarah Bayaran</h3><div id="hist"></div></div></div>
+<script>
+const K="gct_v1";let seed=[
+["AIM",230,"Mingguan","",160],["Pinjaman Berlesen Mingguan",570,"Mingguan","2026-10-28",0],["TikTok PayLater Pika OKT",227,"Tertunggak","2026-10-28",0],["Ieda SEPT",300,"Tertunggak","",0],["Khind OKT",500,"Tertunggak","",0],["Sewa OKT",300,"Tertunggak","",0],["Coway OKT",246,"Tertunggak","",0],["Shopee OKT",261,"Tertunggak","",0],["Hutang Kawan",150,"Tertunggak","2026-10-31",0],["TNB OKT",157,"Tertunggak","",0],["WiFi OKT",250,"Tertunggak","",0],["Atome Mi",218,"Bulanan","2026-11-03",0],["Atome Mi Unifi",56,"Bulanan","2026-11-04",0],["Atome Mi Makanan Kucing",30,"Bulanan","2026-11-04",0],["Atome Mi TNB",54,"Bulanan","2026-11-04",0],["TNG Loan",207,"Bulanan","2026-11-05",0],["Car Loan",530,"Bulanan","2026-11-05",0],["Atome Mak Tayar",174,"Bulanan","2026-11-05",0],["Pinjaman Berlesen Bulanan",240,"Bulanan","2026-11-07",0],["U Mobile Honor",136,"Bulanan","2026-11-07",0],["U Mobile iPhone OCT",372.8,"Bulanan","2026-11-07",0],["U Mobile iPhone Pika",172.1,"Bulanan","2026-11-07",0],["TNG",73,"Bulanan","2026-11-09",0],["Yes Ayg",61.5,"Bulanan","2026-11-09",0],["TNG",31,"Bulanan","2026-11-11",0],["Atome Mak U Mobile",60,"Bulanan","2026-11-12",0],["TNG",124,"Bulanan","2026-11-15",0],["Yes Pika",93.3,"Bulanan","2026-11-15",0],["TNG",83,"Bulanan","2026-11-18",0],["RedOne",72.1,"Bulanan","2026-11-20",0],["Khind",125,"NOV — SEMASA","",0],["Sewa",300,"NOV — SEMASA","",0],["WiFi",250,"NOV — SEMASA","",0],["SK Magic",100,"NOV — SEMASA","",0],["Coway",246,"NOV — SEMASA","",0],["Ieda",300,"NOV — SEMASA","",0],["U Mobile Xiaomi",136,"NOV — SEMASA","",0],["TikTok PayLater (Ogos+Sept+Okt+Nov)",1400,"Tertunggak","",0],["TikTok Pika SEPT — bayar isteri",395,"Tertunggak","",0],["Grab PayLater",1856.1,"Tertunggak","",0],["AdaCash",810,"Tertunggak","",0],["Spray + pasang bumper",400,"Lain-lain","",0]
+].map((x,i)=>({id:Date.now()+i,n:x[0],a:x[1],c:x[2],d:x[3],f:x[4],p:false,pd:""}));
+let s=JSON.parse(localStorage.getItem(K)||"null")||{items:seed,buffer:19,mak:0};
+const rm=x=>"RM"+Number(x||0).toFixed(2);function save(){localStorage.setItem(K,JSON.stringify(s));render()}
+function add(){let n=nm.value.trim(),a=+amt.value;if(!n||!a)return alert("Isi nama dan jumlah");s.items.push({id:Date.now(),n,a,c:cat.value,d:due.value,f:0,p:false,pd:""});nm.value="";amt.value="";due.value="";save()}
+function tick(id){let x=s.items.find(z=>z.id==id);x.p=!x.p;x.pd=x.p?new Date().toISOString().slice(0,10):"";if(x.p)x.f=x.a;save()}
+function fund(id){let x=s.items.find(z=>z.id==id),v=+prompt("Tambah dana RM:",0);if(v>0){x.f=Math.min(x.a,x.f+v);save()}}
+function del(id){if(confirm("Padam item?")){s.items=s.items.filter(x=>x.id!=id);save()}}
+function buffer(){let v=+prompt("Baki Buffer / Servis sekarang:",s.buffer);if(!isNaN(v)){s.buffer=v;save()}}
+function mak(){let v=+prompt("Tambah Hutang Mak RM:",50);if(v>0){s.mak=Math.min(1000,s.mak+v);save()}}
+function row(x){let q=Math.min(100,Math.round(x.f/x.a*100)),st=x.p?"PAID":x.f>=x.a?"DANA CUKUP":"BELUM BAYAR";return `<div class="item ${x.p?"paid":""}"><input type="checkbox" ${x.p?"checked":""} onchange="tick(${x.id})"><div><div class="name">${x.n} — ${rm(x.a)}</div><div class="small">${x.c}${x.d?" • Due "+x.d:""}${x.pd?" • Paid "+x.pd:""}</div><div class="small">Dana ${rm(x.f)} / ${rm(x.a)} (${q}%)</div><div class="bar"><div class="fill" style="width:${q}%"></div></div>${x.p?"":`<button onclick="fund(${x.id})">+ Dana</button><button onclick="del(${x.id})">Padam</button>`}</div><span class="tag ${x.p?"ok":x.f>=x.a?"fund":""}">${st}</span></div>`}
+function render(){
+let a=s.items.filter(x=>!x.p),h=s.items.filter(x=>x.p);
+let w=a.filter(x=>x.c==="Mingguan");
+let d=a.filter(x=>x.d && x.c!=="Mingguan").sort((x,y)=>x.d.localeCompare(y.d));
+let noDue=a.filter(x=>!x.d && x.c!=="Mingguan");
+let n=noDue.filter(x=>x.c==="NOV — SEMASA");
+let o=noDue.filter(x=>x.c!=="Mingguan"&&x.c!=="NOV — SEMASA"&&(x.n.includes("OKT")||x.n.includes("OCT")||x.n.includes("SEPT")));
+let used=new Set([...w,...n,...o,...d].map(x=>x.id));
+let z=a.filter(x=>!used.has(x.id));
+weekly.innerHTML=w.map(row).join("")||'<div class="small">Tiada komitmen mingguan.</div>';
+oct.innerHTML=o.map(row).join("")||'<div class="small">Tiada komitmen Oktober.</div>';
+nov.innerHTML=n.map(row).join("")||'<div class="small">Tiada komitmen November.</div>';
+dated.innerHTML=d.map(row).join("")||'<div class="small">Tiada due date.</div>';
+other.innerHTML=z.map(row).join("")||'<div class="small">Tiada item lain.</div>';
+hist.innerHTML=h.map(row).join("")||"Belum ada sejarah";
+out.textContent=rm(a.reduce((t,x)=>t+x.a,0));done.textContent=rm(h.reduce((t,x)=>t+x.a,0));buf.textContent=rm(s.buffer);mak.textContent=rm(s.mak)+" / RM1,000"
+}
+function backup(){let b=new Blob([JSON.stringify(s,null,2)],{type:"application/json"}),u=URL.createObjectURL(b),a=document.createElement("a");a.href=u;a.download="commitment-backup.json";a.click();URL.revokeObjectURL(u)}
+function restore(e){let r=new FileReader();r.onload=()=>{try{s=JSON.parse(r.result);save();alert("Import berjaya")}catch{alert("Backup tak sah")}};r.readAsText(e.target.files[0])}render();
+</script><script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js'));
+}
+</script></body></html>
